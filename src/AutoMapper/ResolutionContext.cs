@@ -12,7 +12,8 @@ namespace AutoMapper
 		private readonly int? _arrayIndex;
 		private readonly object _sourceValue;
 		private readonly object _destinationValue;
-		private readonly ResolutionContext _parent;
+	    private readonly IServiceFactory _serviceFactory;
+	    private readonly ResolutionContext _parent;
 		private readonly Dictionary<ResolutionContext, object> _instanceCache;
 
 		public TypeMap TypeMap { get { return _typeMap; } }
@@ -25,17 +26,18 @@ namespace AutoMapper
 		public ResolutionContext Parent { get { return _parent; } }
 		public Dictionary<ResolutionContext, object> InstanceCache { get { return _instanceCache; } }
 
-		public ResolutionContext(TypeMap typeMap, object source, Type sourceType, Type destinationType)
-			: this(typeMap, source, null, sourceType, destinationType)
+		public ResolutionContext(TypeMap typeMap, object source, Type sourceType, Type destinationType, IServiceFactory serviceFactory)
+			: this(typeMap, source, null, sourceType, destinationType, serviceFactory)
 		{
 		}
 
-		public ResolutionContext(TypeMap typeMap, object source, object destination, Type sourceType, Type destinationType)
+		public ResolutionContext(TypeMap typeMap, object source, object destination, Type sourceType, Type destinationType, IServiceFactory serviceFactory)
 		{
 			_typeMap = typeMap;
 			_sourceValue = source;
 			_destinationValue = destination;
-			if (typeMap != null)
+		    _serviceFactory = serviceFactory;
+		    if (typeMap != null)
 			{
 				_sourceType = typeMap.SourceType;
 				_destinationType = typeMap.DestinationType;
@@ -52,6 +54,7 @@ namespace AutoMapper
 		{
 			_arrayIndex = context._arrayIndex;
 			_typeMap = context._typeMap;
+		    _serviceFactory = context._serviceFactory;
 			_propertyMap = context._propertyMap;
 			_sourceType = context._sourceType;
 			_sourceValue = sourceValue;
@@ -65,6 +68,7 @@ namespace AutoMapper
 		{
 			_arrayIndex = context._arrayIndex;
 			_typeMap = context._typeMap;
+		    _serviceFactory = context._serviceFactory;
 			_propertyMap = context._propertyMap;
 			_sourceType = sourceType;
 			_sourceValue = sourceValue;
@@ -74,10 +78,11 @@ namespace AutoMapper
 			_instanceCache = context._instanceCache;
 		}
 
-        private ResolutionContext(ResolutionContext context, TypeMap memberTypeMap, object sourceValue, Type sourceType, Type destinationType)
+        private ResolutionContext(ResolutionContext context, TypeMap memberTypeMap, object sourceValue, Type sourceType, Type destinationType, IServiceFactory serviceFactory)
         {
             _typeMap = memberTypeMap;
             _sourceValue = sourceValue;
+            _serviceFactory = serviceFactory;
             _parent = context;
             if (memberTypeMap != null)
             {
@@ -95,6 +100,7 @@ namespace AutoMapper
 	    private ResolutionContext(ResolutionContext context, object sourceValue, object destinationValue, TypeMap memberTypeMap, PropertyMap propertyMap)
 		{
 			_typeMap = memberTypeMap;
+	        _serviceFactory = context._serviceFactory;
 			_propertyMap = propertyMap;
 			_sourceType = memberTypeMap.SourceType;
 			_sourceValue = sourceValue;
@@ -111,6 +117,7 @@ namespace AutoMapper
 			_sourceValue = sourceValue;
             _destinationValue = destinationValue;
 			_parent = context;
+		    _serviceFactory = context._serviceFactory;
 			_destinationType = propertyMap.DestinationProperty.MemberType;
 			_instanceCache = context._instanceCache;
 		}
@@ -123,6 +130,7 @@ namespace AutoMapper
 			_sourceType = sourceType;
 			_sourceValue = sourceValue;
 			_parent = context;
+		    _serviceFactory = context._serviceFactory;
 			_destinationType = destinationType;
 			_instanceCache = context._instanceCache;
 		}
@@ -139,7 +147,12 @@ namespace AutoMapper
 			}
 		}
 
-		public bool IsSourceValueNull
+	    public IServiceFactory ServiceFactory
+	    {
+	        get { return _serviceFactory; }
+	    }
+
+	    public bool IsSourceValueNull
 		{
 			get { return Equals(null, _sourceValue); }
 		}
@@ -154,9 +167,9 @@ namespace AutoMapper
 			return new ResolutionContext(this, sourceValue, sourceType);
 		}
 
-        public ResolutionContext CreateTypeContext(TypeMap memberTypeMap, object sourceValue, Type sourceType, Type destinationType)
+        public ResolutionContext CreateTypeContext(TypeMap memberTypeMap, object sourceValue, Type sourceType, Type destinationType, IServiceFactory serviceFactory)
         {
-            return new ResolutionContext(this, memberTypeMap, sourceValue, sourceType, destinationType);
+            return new ResolutionContext(this, memberTypeMap, sourceValue, sourceType, destinationType, serviceFactory);
         }
 
 		public ResolutionContext CreateMemberContext(TypeMap memberTypeMap, object memberValue, object destinationValue, Type sourceMemberType, PropertyMap propertyMap)
@@ -230,7 +243,7 @@ namespace AutoMapper
 
 		public static ResolutionContext New<TSource>(TSource sourceValue)
 		{
-			return new ResolutionContext(null, sourceValue, typeof (TSource), null);
+			return new ResolutionContext(null, sourceValue, typeof (TSource), null, null);
 		}
 	}
 

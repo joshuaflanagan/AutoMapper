@@ -11,14 +11,16 @@ namespace AutoMapper
 	public class MappingEngine : IMappingEngine, IMappingEngineRunner
 	{
 		private readonly IConfigurationProvider _configurationProvider;
-        private readonly ProxyGenerator _proxyGenerator = new ProxyGenerator();
+	    private readonly IServiceFactory _serviceFactory;
+	    private readonly ProxyGenerator _proxyGenerator = new ProxyGenerator();
 		private readonly IObjectMapper[] _mappers;
 		private readonly IDictionary<TypePair, IObjectMapper> _objectMapperCache = new Dictionary<TypePair, IObjectMapper>();
 
-		public MappingEngine(IConfigurationProvider configurationProvider)
+		public MappingEngine(IConfigurationProvider configurationProvider, IServiceFactory serviceFactory)
 		{
 			_configurationProvider = configurationProvider;
-			_mappers = configurationProvider.GetMappers();
+		    _serviceFactory = serviceFactory ?? _configurationProvider.GetServiceFactory();
+		    _mappers = configurationProvider.GetMappers();
 			_configurationProvider.TypeMapCreated += ClearTypeMap;
 		}
 
@@ -40,7 +42,7 @@ namespace AutoMapper
 			Type destinationType = typeof(TDestination);
 			Type sourceType = typeof(TSource);
 			TypeMap typeMap = ConfigurationProvider.FindTypeMapFor(source, sourceType, destinationType);
-			var context = parentContext.CreateTypeContext(typeMap, source, sourceType, destinationType);
+			var context = parentContext.CreateTypeContext(typeMap, source, sourceType, destinationType, _serviceFactory);
 			return (TDestination)((IMappingEngineRunner)this).Map(context);
 		}
 
@@ -81,7 +83,7 @@ namespace AutoMapper
 			var typeMap = ConfigurationProvider.FindTypeMapFor(source, sourceType, destinationType) ??
 			              ConfigurationProvider.CreateTypeMap(sourceType, destinationType);
 
-			var context = new ResolutionContext(typeMap, source, sourceType, destinationType);
+			var context = new ResolutionContext(typeMap, source, sourceType, destinationType, _serviceFactory);
 
 			return ((IMappingEngineRunner)this).Map(context);
 		}
@@ -91,7 +93,7 @@ namespace AutoMapper
 			var typeMap = ConfigurationProvider.FindTypeMapFor(source, sourceType, destinationType) ??
 			              ConfigurationProvider.CreateTypeMap(sourceType, destinationType);
 
-			var context = new ResolutionContext(typeMap, source, destination, sourceType, destinationType);
+            var context = new ResolutionContext(typeMap, source, destination, sourceType, destinationType, _serviceFactory);
 
 			((IMappingEngineRunner)this).Map(context);
 		}
@@ -100,7 +102,7 @@ namespace AutoMapper
 		{
 			TypeMap typeMap = ConfigurationProvider.FindTypeMapFor(source, sourceType, destinationType);
 
-			var context = new ResolutionContext(typeMap, source, sourceType, destinationType);
+			var context = new ResolutionContext(typeMap, source, sourceType, destinationType, _serviceFactory);
 
 			return ((IMappingEngineRunner)this).Map(context);
 		}
@@ -109,7 +111,7 @@ namespace AutoMapper
 		{
 			TypeMap typeMap = ConfigurationProvider.FindTypeMapFor(source, sourceType, destinationType);
 
-			var context = new ResolutionContext(typeMap, source, destination, sourceType, destinationType);
+            var context = new ResolutionContext(typeMap, source, destination, sourceType, destinationType, _serviceFactory);
 
 			return ((IMappingEngineRunner)this).Map(context);
 		}

@@ -8,13 +8,13 @@ namespace AutoMapper
 	internal class MappingExpression : IMappingExpression, IMemberConfigurationExpression
 	{
 		private readonly TypeMap _typeMap;
-		private readonly Func<Type, object> _typeConverterCtor;
+		private readonly Func<Type, object> _serviceCtor;
 	    private PropertyMap _propertyMap;
 
-	    public MappingExpression(TypeMap typeMap, Func<Type, object> typeConverterCtor)
+	    public MappingExpression(TypeMap typeMap, Func<Type, object> serviceCtor)
 		{
 			_typeMap = typeMap;
-			_typeConverterCtor = typeConverterCtor;
+			_serviceCtor = serviceCtor;
 		}
 
 		public void ConvertUsing<TTypeConverter>()
@@ -24,7 +24,7 @@ namespace AutoMapper
 
 		public void ConvertUsing(Type typeConverterType)
 		{
-			var converter = new DeferredInstantiatedConverter(typeConverterType, () => _typeConverterCtor(typeConverterType));
+			var converter = new DeferredInstantiatedConverter(typeConverterType, () => _serviceCtor(typeConverterType));
 
 			_typeMap.UseCustomMapper(converter.Convert);
 		}
@@ -40,7 +40,7 @@ namespace AutoMapper
         {
             IMemberAccessor destProperty = new PropertyAccessor(_typeMap.DestinationType.GetProperty(name));
             ForDestinationMember(destProperty, memberOptions);
-            return new MappingExpression(_typeMap, _typeConverterCtor);
+            return new MappingExpression(_typeMap, _serviceCtor);
         }
 
         private void ForDestinationMember(IMemberAccessor destinationProperty, Action<IMemberConfigurationExpression> memberOptions)
@@ -67,7 +67,7 @@ namespace AutoMapper
 
         public IResolverConfigurationExpression ResolveUsing(Type valueResolverType)
         {
-            var resolver = new DeferredInstantiatedResolver(() => (IValueResolver)_typeConverterCtor(valueResolverType));
+            var resolver = new FactoryBuiltResolver(valueResolverType);
 
             ResolveUsing(resolver);
 
@@ -76,7 +76,7 @@ namespace AutoMapper
 
 	    public IResolverConfigurationExpression ResolveUsing<TValueResolver>()
 	    {
-            var resolver = new DeferredInstantiatedResolver(() => (IValueResolver)_typeConverterCtor(typeof(TValueResolver)));
+            var resolver = new FactoryBuiltResolver(typeof(TValueResolver));
 
             ResolveUsing(resolver);
 
@@ -171,7 +171,7 @@ namespace AutoMapper
 
 		public IResolverConfigurationExpression<TSource, TValueResolver> ResolveUsing<TValueResolver>() where TValueResolver : IValueResolver
 		{
-			var resolver = new DeferredInstantiatedResolver(() => (IValueResolver)_serviceCtor(typeof(TValueResolver)));
+			var resolver = new FactoryBuiltResolver(typeof(TValueResolver));
 
 			ResolveUsing(resolver);
 
@@ -180,7 +180,7 @@ namespace AutoMapper
 
 		public IResolverConfigurationExpression<TSource> ResolveUsing(Type valueResolverType)
 		{
-			var resolver = new DeferredInstantiatedResolver(() => (IValueResolver)_serviceCtor(valueResolverType));
+			var resolver = new FactoryBuiltResolver(valueResolverType);
 
 			ResolveUsing(resolver);
 

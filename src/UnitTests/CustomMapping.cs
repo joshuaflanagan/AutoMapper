@@ -631,9 +631,17 @@ namespace AutoMapper.UnitTests
 				}
 			}
 
+            public class FakeServiceFactory : IServiceFactory
+            {
+                public object GetInstance(Type type)
+                {
+                    return new CustomValueResolver(5);
+                }
+            }
+
 			protected override void Establish_context()
 			{
-				Mapper.Initialize(cfg => cfg.ConstructServicesUsing(type => new CustomValueResolver(5)));
+				Mapper.Initialize(cfg => cfg.ConstructServicesUsing(t => new CustomValueResolver(5)));
 
 				Mapper.CreateMap<Source, Destination>()
 					.ForMember(d => d.Value, opt => opt.ResolveUsing<CustomValueResolver>().FromMember(src => src.Value));
@@ -650,6 +658,64 @@ namespace AutoMapper.UnitTests
 				_result.Value.ShouldEqual(10);
 			}
 		}
+
+        public class When_configuring_a_global_service_factory_for_resolvers : AutoMapperSpecBase
+        {
+            private Destination _result;
+
+            private class Source
+            {
+                public int Value { get; set; }
+            }
+
+            private class Destination
+            {
+                public int Value { get; set; }
+            }
+
+            private class CustomValueResolver : ValueResolver<int, int>
+            {
+                private readonly int _toAdd;
+                public CustomValueResolver() { _toAdd = 11; }
+
+                public CustomValueResolver(int toAdd)
+                {
+                    _toAdd = toAdd;
+                }
+
+                protected override int ResolveCore(int source)
+                {
+                    return source + _toAdd;
+                }
+            }
+
+            public class FakeServiceFactory : IServiceFactory
+            {
+                public object GetInstance(Type type)
+                {
+                    return new CustomValueResolver(5);
+                }
+            }
+
+            protected override void Establish_context()
+            {
+                Mapper.Initialize(cfg => cfg.ConstructServicesUsing(new FakeServiceFactory()));
+
+                Mapper.CreateMap<Source, Destination>()
+                    .ForMember(d => d.Value, opt => opt.ResolveUsing<CustomValueResolver>().FromMember(src => src.Value));
+            }
+
+            protected override void Because_of()
+            {
+                _result = Mapper.Map<Source, Destination>(new Source { Value = 5 });
+            }
+
+            [Test]
+            public void Should_use_the_specified_factory()
+            {
+                _result.Value.ShouldEqual(10);
+            }
+        }
 
 		public class When_specifying_member_and_member_resolver_using_string_property_names : AutoMapperSpecBase
 		{

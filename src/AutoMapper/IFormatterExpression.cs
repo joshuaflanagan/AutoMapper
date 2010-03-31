@@ -42,6 +42,7 @@ namespace AutoMapper
 		void AddProfile<TProfile>() where TProfile : Profile, new();
 		void SelfConfigure(Assembly assembly);
 		void ConstructServicesUsing(Func<Type, object> constructor);
+        void ConstructServicesUsing(IServiceFactory serviceFactory);
 		void Seal();
 	}
 }

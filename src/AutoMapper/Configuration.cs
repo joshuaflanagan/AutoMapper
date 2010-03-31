@@ -31,7 +31,12 @@ namespace AutoMapper
 
 		public event EventHandler<TypeMapCreatedEventArgs> TypeMapCreated;
 
-		public bool AllowNullDestinationValues
+        public IServiceFactory GetServiceFactory()
+	    {
+	        return new LambdaServiceFactory(_serviceCtor);
+	    }
+
+	    public bool AllowNullDestinationValues
 		{
 			get { return GetProfile(DefaultProfileName).AllowNullDestinationValues; }
 			set { GetProfile(DefaultProfileName).AllowNullDestinationValues = value; }
@@ -101,6 +106,11 @@ namespace AutoMapper
 		{
 			_serviceCtor = constructor;
 		}
+
+        public void ConstructServicesUsing(IServiceFactory serviceFactory)
+        {
+            _serviceCtor = t => serviceFactory.GetInstance(t);
+        }
 
 		public void Seal()
 		{
@@ -295,7 +305,8 @@ namespace AutoMapper
 
 			foreach (var typeMap in _typeMaps)
 			{
-				DryRunTypeMap(typeMapsChecked, new ResolutionContext(typeMap, null, typeMap.SourceType, typeMap.DestinationType));
+				//TODO: figure out what to do with servicefactory here
+                DryRunTypeMap(typeMapsChecked, new ResolutionContext(typeMap, null, typeMap.SourceType, typeMap.DestinationType, null));
 			}
 		}
 

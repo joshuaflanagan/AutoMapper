@@ -25,6 +25,7 @@ namespace AutoMapper
 		TypeMap CreateTypeMap(Type sourceType, Type destinationType);
 
 		event EventHandler<TypeMapCreatedEventArgs> TypeMapCreated;
+	    IServiceFactory GetServiceFactory();
 	}
 
 }

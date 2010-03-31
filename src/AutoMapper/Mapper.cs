@@ -175,7 +175,7 @@ namespace AutoMapper
 					{
 						if (_mappingEngine == null)
 						{
-							_mappingEngine = new MappingEngine(ConfigurationProvider);
+							_mappingEngine = new MappingEngine(ConfigurationProvider, null);
 						}
 					}
 				}
